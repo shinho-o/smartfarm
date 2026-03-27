@@ -6,14 +6,12 @@
 #include <DallasTemperature.h>
 #include <Wire.h>
 #include <Adafruit_SHT31.h>
-#include <ESP32Servo.h>
 #include "esp_camera.h"
 #include "esp_http_server.h"
 #include "secrets.h"
 
 // ===================== MQTT 토픽 =====================
 #define MQTT_TOPIC       "smartfarm/sensors"
-#define MQTT_CONTROL     "smartfarm/control"
 
 // ===================== 센서 핀 설정 (카메라와 충돌 방지) =====================
 #define DS18B20_PIN  2       // 수온 센서 (OneWire)
@@ -21,13 +19,6 @@
 #define PH_PIN       3       // pH 센서 (ADC)
 #define SHT31_SDA    38      // SHT31 I2C SDA
 #define SHT31_SCL    39      // SHT31 I2C SCL
-#define SERVO_PIN    14      // 서보모터
-
-// ===================== 서보 설정 =====================
-// 현재(180°)=켜진 상태/대기, 시계방향 15도(195→clamp 180, 사실상 반대=165)
-#define SERVO_ON_POS     130  // ON 위치 (켜진 상태)
-#define SERVO_OFF_POS    180  // OFF 위치 (꺼진 상태, 시계 방향 50도 더)
-#define SERVO_PUSH_TIME  1000  // 밀고 복귀하는 시간 (ms)
 
 // ===================== OV2640 카메라 핀 (Freenove ESP32-S3) =====================
 #define CAM_PIN_PWDN   -1
@@ -69,9 +60,6 @@ PubSubClient mqtt(wifiClient);
 OneWire oneWire(DS18B20_PIN);
 DallasTemperature tempSensor(&oneWire);
 Adafruit_SHT31 sht31 = Adafruit_SHT31();
-Servo ledServo;
-bool ledState = false;
-
 httpd_handle_t streamServer = NULL;
 
 float cdsBuffer[SAMPLE_COUNT]     = {0};
@@ -341,42 +329,11 @@ void connectWiFi() {
     Serial.println(WiFi.localIP());
 }
 
-// MQTT 수신 콜백 (서보 제어)
-void mqttCallback(char* topic, byte* payload, unsigned int length) {
-    char msg[64];
-    int len = min((int)length, 63);
-    memcpy(msg, payload, len);
-    msg[len] = '\0';
-
-    if (strcmp(topic, MQTT_CONTROL) == 0) {
-        // 각도 직접 제어: {"angle":90}
-        char* angleStr = strstr(msg, "\"angle\":");
-        if (angleStr) {
-            int angle = atoi(angleStr + 8);
-            angle = constrain(angle, 0, 180);
-            ledServo.write(angle);
-            Serial.printf("Servo → %d°\n", angle);
-            return;
-        }
-        if (strstr(msg, "\"led\":\"on\"") || strstr(msg, "\"led\": \"on\"")) {
-            ledServo.write(SERVO_ON_POS);
-            ledState = true;
-            Serial.println("LED ON");
-        } else if (strstr(msg, "\"led\":\"off\"") || strstr(msg, "\"led\": \"off\"")) {
-            ledServo.write(SERVO_OFF_POS);
-            ledState = false;
-            Serial.println("LED OFF");
-        }
-    }
-}
-
 void connectMQTT() {
     mqtt.setServer(MQTT_SERVER, MQTT_PORT);
-    mqtt.setCallback(mqttCallback);
     while (!mqtt.connected()) {
         Serial.print("MQTT 연결 중...");
         if (mqtt.connect("ESP32_Smartfarm")) {
-            mqtt.subscribe(MQTT_CONTROL);
             Serial.println("완료");
         } else {
             Serial.print("실패(");
@@ -391,10 +348,6 @@ void setup() {
     Serial.begin(115200);
     analogReadResolution(12);
     tempSensor.begin();
-
-    ledServo.attach(SERVO_PIN);
-    ledServo.write(SERVO_ON_POS);
-    Serial.println("서보모터 초기화 완료");
 
     Wire.begin(SHT31_SDA, SHT31_SCL);
     if (!sht31.begin(0x44)) {
@@ -465,8 +418,8 @@ void loop() {
 
         char payload[300];
         snprintf(payload, sizeof(payload),
-            "{\"ts\":%lu,\"raw_cds\":%d,\"raw_ph\":%d,\"light\":%.1f,\"ph\":%.2f,\"water_temp\":%.2f,\"air_temp\":%.2f,\"humidity\":%.2f,\"led\":%s}",
-            now, rawCDS, rawPH, avgCDS, avgPH, avgTemp, avgAirTemp, avgHum, ledState ? "true" : "false"
+            "{\"ts\":%lu,\"raw_cds\":%d,\"raw_ph\":%d,\"light\":%.1f,\"ph\":%.2f,\"water_temp\":%.2f,\"air_temp\":%.2f,\"humidity\":%.2f}",
+            now, rawCDS, rawPH, avgCDS, avgPH, avgTemp, avgAirTemp, avgHum
         );
 
         mqtt.publish(MQTT_TOPIC, payload);
