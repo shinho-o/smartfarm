@@ -48,12 +48,10 @@
 #define CDS_DARK     3100
 
 // ===================== pH 캘리브레이션 =====================
-#define PH_VREF         3.3f
-#define PH_ADC_MAX      4095
-#define PH_DIVIDER      2.0f
-#define PH_NEUTRAL_V    3.18f   // 수돗물 기준 중성 전압 (실측값)
-#define PH_SLOPE        0.18f
-#define PH_OFFSET       0.0f
+// 생수(pH≈7.0) 기준: raw ≈ 3970
+// 1점 캘리브레이션 (2점은 기준액 있을 때 추가)
+#define PH_RAW_NEUTRAL  3970    // pH 7.0일 때 ADC raw 값
+#define PH_RAW_PER_PH   -180.0f // raw 변화량 per pH 1.0 (음수: raw↑ = pH↓)
 
 // ===================== 전역 변수 =====================
 WiFiClient wifiClient;
@@ -85,8 +83,7 @@ float getCDSBrightness(int raw) {
 }
 
 float getPH(int raw) {
-    float voltage = raw * (PH_VREF / PH_ADC_MAX) * PH_DIVIDER;
-    float ph = 7.0f + ((PH_NEUTRAL_V - voltage) / PH_SLOPE) + PH_OFFSET;
+    float ph = 7.0f + (float)(PH_RAW_NEUTRAL - raw) / PH_RAW_PER_PH;
     return constrain(ph, 0.0f, 14.0f);
 }
 
