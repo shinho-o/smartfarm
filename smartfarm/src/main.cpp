@@ -349,6 +349,15 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
     msg[len] = '\0';
 
     if (strcmp(topic, MQTT_CONTROL) == 0) {
+        // 각도 직접 제어: {"angle":90}
+        char* angleStr = strstr(msg, "\"angle\":");
+        if (angleStr) {
+            int angle = atoi(angleStr + 8);
+            angle = constrain(angle, 0, 180);
+            ledServo.write(angle);
+            Serial.printf("Servo → %d°\n", angle);
+            return;
+        }
         if (strstr(msg, "\"led\":\"on\"") || strstr(msg, "\"led\": \"on\"")) {
             ledServo.write(SERVO_ON_POS);
             ledState = true;
