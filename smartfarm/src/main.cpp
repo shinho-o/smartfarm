@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <math.h>
 #include <WiFi.h>
 #include <PubSubClient.h>
 #include <OneWire.h>
@@ -89,10 +90,47 @@ float getPH(int raw) {
     return constrain(ph, 0.0f, 14.0f);
 }
 
-float movingAverage(float* buf, int count) {
+// 중앙값 필터 (튀는 값 제거)
+float getMedian(float* buf, int count) {
+    float sorted[SAMPLE_COUNT];
+    memcpy(sorted, buf, count * sizeof(float));
+
+    // 버블 정렬
+    for (int i = 0; i < count - 1; i++) {
+        for (int j = 0; j < count - i - 1; j++) {
+            if (sorted[j] > sorted[j + 1]) {
+                float tmp = sorted[j];
+                sorted[j] = sorted[j + 1];
+                sorted[j + 1] = tmp;
+            }
+        }
+    }
+    return (count % 2 == 0)
+        ? (sorted[count / 2 - 1] + sorted[count / 2]) / 2.0f
+        : sorted[count / 2];
+}
+
+// 이상치 제거 후 평균 (중앙값 기준 ±편차 벗어나면 제외)
+float filteredAverage(float* buf, int count) {
+    float median = getMedian(buf, count);
+
+    // MAD (Median Absolute Deviation) 계산
+    float deviations[SAMPLE_COUNT];
+    for (int i = 0; i < count; i++) {
+        deviations[i] = fabs(buf[i] - median);
+    }
+    float mad = getMedian(deviations, count);
+    float threshold = (mad < 0.01f) ? 1.0f : mad * 3.0f;
+
     float sum = 0;
-    for (int i = 0; i < count; i++) sum += buf[i];
-    return sum / count;
+    int valid = 0;
+    for (int i = 0; i < count; i++) {
+        if (buf[i] > -900 && fabs(buf[i] - median) <= threshold) {
+            sum += buf[i];
+            valid++;
+        }
+    }
+    return (valid > 0) ? sum / valid : median;
 }
 
 // ===================== 카메라 초기화 =====================
@@ -376,11 +414,11 @@ void loop() {
 
     // 5초마다 MQTT 전송
     if (now - lastSendTime >= SEND_INTERVAL) {
-        float avgCDS     = movingAverage(cdsBuffer, SAMPLE_COUNT);
-        float avgPH      = movingAverage(phBuffer,  SAMPLE_COUNT);
-        float avgTemp    = movingAverage(tmpBuffer, SAMPLE_COUNT);
-        float avgAirTemp = movingAverage(airTempBuffer, SAMPLE_COUNT);
-        float avgHum     = movingAverage(humBuffer, SAMPLE_COUNT);
+        float avgCDS     = filteredAverage(cdsBuffer, SAMPLE_COUNT);
+        float avgPH      = filteredAverage(phBuffer,  SAMPLE_COUNT);
+        float avgTemp    = filteredAverage(tmpBuffer, SAMPLE_COUNT);
+        float avgAirTemp = filteredAverage(airTempBuffer, SAMPLE_COUNT);
+        float avgHum     = filteredAverage(humBuffer, SAMPLE_COUNT);
 
         char payload[300];
         snprintf(payload, sizeof(payload),
