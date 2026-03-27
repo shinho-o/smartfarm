@@ -170,6 +170,17 @@
         </div>
     </div>
 
+    <div class="camera-section">
+        <h2>LED Control</h2>
+        <div style="text-align:center;padding:10px 0">
+            <span id="ledStatus" style="font-size:1.2em">💡 OFF</span>
+        </div>
+        <div class="cam-buttons">
+            <button class="btn btn-on" onclick="ledControl('on')">LED ON</button>
+            <button class="btn btn-off" onclick="ledControl('off')">LED OFF</button>
+        </div>
+    </div>
+
     <div class="raw-data">
         <h2>Raw Data</h2>
         <div class="raw-json" id="rawJson">Waiting for data...</div>
@@ -273,6 +284,10 @@
             if (d.humidity !== undefined && d.humidity > -900)
                 document.getElementById('valHum').innerHTML = d.humidity.toFixed(1) + '<span class="card-unit">%</span>';
 
+            if (d.led !== undefined) {
+                document.getElementById('ledStatus').textContent = d.led ? '💡 ON' : '💡 OFF';
+            }
+
             document.getElementById('rawJson').textContent = JSON.stringify(d, null, 2);
 
             // Flash cards
@@ -299,6 +314,13 @@
         function camCap() {
             const s = JSON.parse(localStorage.getItem('sf_settings') || 'null') || getDefaults();
             window.open(s.camUrl + '/capture?' + Date.now(), '_blank');
+        }
+
+        // LED control via MQTT
+        function ledControl(state) {
+            if (client && client.connected) {
+                client.publish('smartfarm/control', '{"led":"' + state + '"}');
+            }
         }
 
         // PWA install
