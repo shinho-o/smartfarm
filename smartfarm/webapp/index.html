@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0f0f23">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="manifest.json">
+    <title>SmartFarm</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{
+            font-family:'Segoe UI',Arial,sans-serif;
+            background:#0f0f23;color:#e0e0e0;
+            min-height:100vh;padding:12px;
+        }
+        .header{
+            text-align:center;padding:12px 0;
+        }
+        .header h1{font-size:1.4em;color:#00d4ff}
+        .header .status{font-size:0.8em;margin-top:4px}
+        .status-dot{
+            display:inline-block;width:8px;height:8px;
+            border-radius:50%;margin-right:4px;vertical-align:middle;
+        }
+        .online{background:#00ff88}
+        .offline{background:#ff4444}
+
+        .grid{
+            display:grid;
+            grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+            gap:12px;margin:16px 0;
+        }
+        .card{
+            background:#161628;border-radius:14px;
+            padding:16px;text-align:center;
+            border:1px solid #222;
+            transition:border-color 0.3s;
+        }
+        .card.active{border-color:#00d4ff33}
+        .card-icon{font-size:1.8em;margin-bottom:6px}
+        .card-label{font-size:0.75em;color:#888;margin-bottom:4px}
+        .card-value{font-size:1.8em;font-weight:bold;color:#fff}
+        .card-unit{font-size:0.6em;color:#888;font-weight:normal}
+
+        .c-light .card-value{color:#ffcc00}
+        .c-ph .card-value{color:#aa66ff}
+        .c-water .card-value{color:#4488ff}
+        .c-air .card-value{color:#ff6688}
+        .c-hum .card-value{color:#00ddcc}
+
+        .camera-section{
+            background:#161628;border-radius:14px;
+            padding:16px;margin:16px 0;
+            border:1px solid #222;
+        }
+        .camera-section h2{
+            font-size:1em;color:#00ddcc;margin-bottom:12px;
+            text-align:center;
+        }
+        .cam-container{
+            position:relative;width:100%;
+            background:#000;border-radius:10px;
+            overflow:hidden;min-height:200px;
+            display:flex;align-items:center;justify-content:center;
+        }
+        .cam-container img{
+            width:100%;display:none;border-radius:10px;
+        }
+        .cam-off{color:#555;font-size:1.1em}
+        .cam-buttons{
+            display:flex;gap:8px;margin-top:12px;
+            justify-content:center;
+        }
+        .btn{
+            padding:10px 24px;border:none;border-radius:8px;
+            font-size:0.9em;cursor:pointer;font-weight:bold;
+            transition:opacity 0.2s;
+        }
+        .btn:active{opacity:0.7}
+        .btn-on{background:#0f3460;color:#fff}
+        .btn-off{background:#c0392b;color:#fff}
+        .btn-cap{background:#27ae60;color:#fff}
+
+        .settings{
+            background:#161628;border-radius:14px;
+            padding:16px;margin:16px 0;
+            border:1px solid #222;
+        }
+        .settings h2{font-size:1em;color:#888;margin-bottom:12px}
+        .setting-row{
+            display:flex;align-items:center;
+            justify-content:space-between;
+            padding:8px 0;border-bottom:1px solid #222;
+        }
+        .setting-row:last-child{border-bottom:none}
+        .setting-label{font-size:0.85em;color:#aaa}
+        .setting-input{
+            background:#0f0f23;border:1px solid #333;
+            color:#fff;padding:6px 10px;border-radius:6px;
+            font-size:0.85em;width:180px;text-align:right;
+        }
+        .btn-save{
+            width:100%;padding:10px;margin-top:12px;
+            background:#0f3460;color:#fff;border:none;
+            border-radius:8px;font-size:0.9em;cursor:pointer;
+        }
+
+        .raw-data{
+            background:#161628;border-radius:14px;
+            padding:16px;margin:16px 0;
+            border:1px solid #222;
+        }
+        .raw-data h2{font-size:1em;color:#888;margin-bottom:8px}
+        .raw-json{
+            background:#0a0a1a;padding:10px;border-radius:8px;
+            font-family:monospace;font-size:0.75em;color:#66bb6a;
+            word-break:break-all;min-height:40px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>SmartFarm</h1>
+        <div class="status">
+            <span class="status-dot offline" id="statusDot"></span>
+            <span id="statusText">Connecting...</span>
+        </div>
+    </div>
+
+    <div class="grid">
+        <div class="card c-light" id="cardLight">
+            <div class="card-icon">☀️</div>
+            <div class="card-label">Light</div>
+            <div class="card-value" id="valLight">--<span class="card-unit">%</span></div>
+        </div>
+        <div class="card c-ph">
+            <div class="card-icon">🧪</div>
+            <div class="card-label">pH</div>
+            <div class="card-value" id="valPh">--</div>
+        </div>
+        <div class="card c-water">
+            <div class="card-icon">🌊</div>
+            <div class="card-label">Water Temp</div>
+            <div class="card-value" id="valWater">--<span class="card-unit">°C</span></div>
+        </div>
+        <div class="card c-air">
+            <div class="card-icon">🌡️</div>
+            <div class="card-label">Air Temp</div>
+            <div class="card-value" id="valAir">--<span class="card-unit">°C</span></div>
+        </div>
+        <div class="card c-hum">
+            <div class="card-icon">💧</div>
+            <div class="card-label">Humidity</div>
+            <div class="card-value" id="valHum">--<span class="card-unit">%</span></div>
+        </div>
+    </div>
+
+    <div class="camera-section">
+        <h2>Camera</h2>
+        <div class="cam-container">
+            <img id="camStream" alt="Camera">
+            <span class="cam-off" id="camOff">Camera OFF</span>
+        </div>
+        <div class="cam-buttons">
+            <button class="btn btn-on" onclick="camOn()">ON</button>
+            <button class="btn btn-off" onclick="camOff()">OFF</button>
+            <button class="btn btn-cap" onclick="camCap()">Capture</button>
+        </div>
+    </div>
+
+    <div class="raw-data">
+        <h2>Raw Data</h2>
+        <div class="raw-json" id="rawJson">Waiting for data...</div>
+    </div>
+
+    <div class="settings">
+        <h2>Settings</h2>
+        <div class="setting-row">
+            <span class="setting-label">MQTT Host</span>
+            <input class="setting-input" id="mqttHost" value="">
+        </div>
+        <div class="setting-row">
+            <span class="setting-label">MQTT Port (WS)</span>
+            <input class="setting-input" id="mqttPort" value="9001">
+        </div>
+        <div class="setting-row">
+            <span class="setting-label">Camera URL</span>
+            <input class="setting-input" id="camUrl" value="">
+        </div>
+        <button class="btn-save" onclick="saveSettings()">Save & Reconnect</button>
+    </div>
+
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <script>
+        let client = null;
+
+        // Default settings
+        function getDefaults() {
+            const h = location.hostname || '192.168.0.58';
+            return {
+                mqttHost: h,
+                mqttPort: '9001',
+                camUrl: 'http://' + (h === '100.110.26.123' ? '100.110.26.123:82' : '192.168.0.72:81')
+            };
+        }
+
+        function loadSettings() {
+            const d = getDefaults();
+            const s = JSON.parse(localStorage.getItem('sf_settings') || 'null') || d;
+            document.getElementById('mqttHost').value = s.mqttHost;
+            document.getElementById('mqttPort').value = s.mqttPort;
+            document.getElementById('camUrl').value = s.camUrl;
+            return s;
+        }
+
+        function saveSettings() {
+            const s = {
+                mqttHost: document.getElementById('mqttHost').value,
+                mqttPort: document.getElementById('mqttPort').value,
+                camUrl: document.getElementById('camUrl').value
+            };
+            localStorage.setItem('sf_settings', JSON.stringify(s));
+            connectMQTT(s);
+        }
+
+        function connectMQTT(s) {
+            if (client) { client.end(true); }
+
+            const url = 'ws://' + s.mqttHost + ':' + s.mqttPort;
+            document.getElementById('statusText').textContent = 'Connecting...';
+            document.getElementById('statusDot').className = 'status-dot offline';
+
+            client = mqtt.connect(url, {
+                reconnectPeriod: 3000,
+                connectTimeout: 5000
+            });
+
+            client.on('connect', () => {
+                document.getElementById('statusDot').className = 'status-dot online';
+                document.getElementById('statusText').textContent = 'Connected';
+                client.subscribe('smartfarm/sensors');
+            });
+
+            client.on('close', () => {
+                document.getElementById('statusDot').className = 'status-dot offline';
+                document.getElementById('statusText').textContent = 'Disconnected';
+            });
+
+            client.on('error', () => {
+                document.getElementById('statusDot').className = 'status-dot offline';
+                document.getElementById('statusText').textContent = 'Error';
+            });
+
+            client.on('message', (topic, msg) => {
+                try {
+                    const d = JSON.parse(msg.toString());
+                    updateUI(d);
+                } catch(e) {}
+            });
+        }
+
+        function updateUI(d) {
+            if (d.light !== undefined)
+                document.getElementById('valLight').innerHTML = d.light.toFixed(1) + '<span class="card-unit">%</span>';
+            if (d.ph !== undefined)
+                document.getElementById('valPh').textContent = d.ph.toFixed(2);
+            if (d.water_temp !== undefined && d.water_temp > -900)
+                document.getElementById('valWater').innerHTML = d.water_temp.toFixed(1) + '<span class="card-unit">°C</span>';
+            if (d.air_temp !== undefined && d.air_temp > -900)
+                document.getElementById('valAir').innerHTML = d.air_temp.toFixed(1) + '<span class="card-unit">°C</span>';
+            if (d.humidity !== undefined && d.humidity > -900)
+                document.getElementById('valHum').innerHTML = d.humidity.toFixed(1) + '<span class="card-unit">%</span>';
+
+            document.getElementById('rawJson').textContent = JSON.stringify(d, null, 2);
+
+            // Flash cards
+            document.querySelectorAll('.card').forEach(c => {
+                c.classList.add('active');
+                setTimeout(() => c.classList.remove('active'), 300);
+            });
+        }
+
+        // Camera controls
+        function camOn() {
+            const s = JSON.parse(localStorage.getItem('sf_settings') || 'null') || getDefaults();
+            const img = document.getElementById('camStream');
+            img.src = s.camUrl + '/stream?' + Date.now();
+            img.style.display = 'block';
+            document.getElementById('camOff').style.display = 'none';
+        }
+        function camOff() {
+            const img = document.getElementById('camStream');
+            img.src = '';
+            img.style.display = 'none';
+            document.getElementById('camOff').style.display = 'block';
+        }
+        function camCap() {
+            const s = JSON.parse(localStorage.getItem('sf_settings') || 'null') || getDefaults();
+            window.open(s.camUrl + '/capture?' + Date.now(), '_blank');
+        }
+
+        // PWA install
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').catch(() => {});
+        }
+
+        // Init
+        const settings = loadSettings();
+        connectMQTT(settings);
+    </script>
+</body>
+</html>
