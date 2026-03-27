@@ -16,8 +16,8 @@
 #define DS18B20_PIN  2       // 수온 센서 (OneWire)
 #define CDS_PIN      1       // 광센서 (ADC)
 #define PH_PIN       3       // pH 센서 (ADC)
-#define SHT31_SDA    47      // SHT31 I2C SDA
-#define SHT31_SCL    48      // SHT31 I2C SCL
+#define SHT31_SDA    38      // SHT31 I2C SDA
+#define SHT31_SCL    39      // SHT31 I2C SCL
 
 // ===================== OV2640 카메라 핀 (Freenove ESP32-S3) =====================
 #define CAM_PIN_PWDN   -1
