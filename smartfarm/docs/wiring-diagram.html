@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartFarm Wiring Diagram</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #0f0f23;
+            color: #e0e0e0;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #00d4ff;
+            margin-bottom: 8px;
+            font-size: 1.8em;
+        }
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 30px;
+        }
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        .diagram {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 40px;
+        }
+
+        /* ESP32 Board */
+        .esp32 {
+            background: linear-gradient(145deg, #1a3a2a, #0d2618);
+            border: 3px solid #00ff88;
+            border-radius: 16px;
+            padding: 20px;
+            width: 280px;
+            text-align: center;
+            position: relative;
+            box-shadow: 0 0 30px rgba(0, 255, 136, 0.15);
+        }
+        .esp32 h2 {
+            color: #00ff88;
+            font-size: 1.1em;
+            margin-bottom: 4px;
+        }
+        .esp32 .board-name {
+            color: #66bb6a;
+            font-size: 0.85em;
+            margin-bottom: 16px;
+        }
+        .pin-list {
+            text-align: left;
+        }
+        .pin-row {
+            display: flex;
+            align-items: center;
+            padding: 6px 8px;
+            margin: 3px 0;
+            border-radius: 6px;
+            font-size: 0.9em;
+        }
+        .pin-num {
+            background: #333;
+            color: #fff;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-weight: bold;
+            min-width: 65px;
+            text-align: center;
+            margin-right: 10px;
+        }
+        .pin-label { color: #ccc; }
+
+        /* Sensor Cards */
+        .sensors {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .sensor-card {
+            border-radius: 12px;
+            padding: 14px 18px;
+            width: 320px;
+            position: relative;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        .sensor-card h3 {
+            font-size: 1em;
+            margin-bottom: 6px;
+        }
+        .sensor-card .desc {
+            font-size: 0.82em;
+            color: #aaa;
+            margin-bottom: 10px;
+        }
+        .wire {
+            display: flex;
+            align-items: center;
+            font-size: 0.85em;
+            padding: 3px 0;
+        }
+        .wire-color {
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+            margin-right: 8px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .wire-label { min-width: 60px; }
+        .wire-arrow { color: #666; margin: 0 8px; }
+        .wire-target { font-family: monospace; color: #ffd700; }
+
+        /* Sensor-specific colors */
+        .s-cds { background: linear-gradient(145deg, #2a2a0f, #1a1a08); border: 2px solid #ffcc00; }
+        .s-cds h3 { color: #ffcc00; }
+
+        .s-ph { background: linear-gradient(145deg, #1a0f2a, #120828); border: 2px solid #aa66ff; }
+        .s-ph h3 { color: #aa66ff; }
+
+        .s-ds18 { background: linear-gradient(145deg, #0f1a2a, #081228); border: 2px solid #4488ff; }
+        .s-ds18 h3 { color: #4488ff; }
+
+        .s-sht { background: linear-gradient(145deg, #2a0f1a, #280812); border: 2px solid #ff6688; }
+        .s-sht h3 { color: #ff6688; }
+
+        .s-cam { background: linear-gradient(145deg, #0f2a2a, #082828); border: 2px solid #00ddcc; }
+        .s-cam h3 { color: #00ddcc; }
+
+        /* Pin color coding on ESP32 */
+        .p-cds { background: rgba(255, 204, 0, 0.15); }
+        .p-cds .pin-num { background: #b38f00; }
+        .p-ph { background: rgba(170, 102, 255, 0.15); }
+        .p-ph .pin-num { background: #7733cc; }
+        .p-ds18 { background: rgba(68, 136, 255, 0.15); }
+        .p-ds18 .pin-num { background: #2266cc; }
+        .p-sht { background: rgba(255, 102, 136, 0.15); }
+        .p-sht .pin-num { background: #cc3355; }
+        .p-cam { background: rgba(0, 221, 204, 0.15); }
+        .p-cam .pin-num { background: #009988; }
+        .p-pwr { background: rgba(255, 255, 255, 0.05); }
+        .p-pwr .pin-num { background: #555; }
+
+        /* Pipeline Section */
+        .pipeline {
+            background: #161628;
+            border-radius: 16px;
+            padding: 30px;
+            margin-top: 20px;
+        }
+        .pipeline h2 {
+            color: #00d4ff;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .pipe-flow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .pipe-node {
+            padding: 12px 20px;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 0.95em;
+        }
+        .pipe-arrow {
+            color: #00d4ff;
+            font-size: 1.5em;
+        }
+        .pipe-esp { background: #0d2618; border: 2px solid #00ff88; color: #00ff88; }
+        .pipe-mqtt { background: #1a1a08; border: 2px solid #ffcc00; color: #ffcc00; }
+        .pipe-telegraf { background: #120828; border: 2px solid #aa66ff; color: #aa66ff; }
+        .pipe-influx { background: #081228; border: 2px solid #4488ff; color: #4488ff; }
+        .pipe-grafana { background: #280812; border: 2px solid #ff6688; color: #ff6688; }
+        .pipe-sub {
+            font-size: 0.75em;
+            font-weight: normal;
+            color: #888;
+            display: block;
+        }
+
+        /* Camera section */
+        .cam-flow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #333;
+        }
+
+        /* Notes */
+        .notes {
+            background: #161628;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .notes h2 {
+            color: #ffd700;
+            margin-bottom: 12px;
+        }
+        .notes ul {
+            list-style: none;
+            padding: 0;
+        }
+        .notes li {
+            padding: 6px 0;
+            font-size: 0.9em;
+            border-bottom: 1px solid #222;
+        }
+        .notes li:last-child { border-bottom: none; }
+        .notes li::before {
+            content: "⚡ ";
+        }
+        .highlight { color: #ffd700; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>SmartFarm Sensor Wiring Diagram</h1>
+        <p class="subtitle">Freenove ESP32-S3 WROOM + Sensors</p>
+
+        <div class="diagram">
+            <!-- Sensors Left -->
+            <div class="sensors">
+                <div class="sensor-card s-cds">
+                    <h3>CDS Light Sensor</h3>
+                    <div class="desc">Analog light intensity (0-100%)</div>
+                    <div class="wire">
+                        <div class="wire-color" style="background:#ff3333"></div>
+                        <span class="wire-label">VCC</span>
+                        <span class="wire-arrow">→</span>
+                        <span class="wire-target">3.3V</span>
+                    </div>
+                    <div class="wire">
+                        <div class="wire-color" style="background:#333"></div>
+                        <span class="wire-label">GND</span>
+                        <span class="wire-arrow">→</span>
+                        <span class="wire-target">GND</span>
+                    </div>
+                    <div class="wire">
+                        <div class="wire-color" style="background:#ffcc00"></div>
+                        <span class="wire-label">OUT</span>
+                        <span class="wire-arrow">→</span>
+                        <span class="wire-target">GPIO 1 (ADC)</span>
+                    </div>
+                </div>
+
+                <div class="sensor-card s-ph">
+                    <h3>pH Sensor</h3>
+                    <div class="desc">Water acidity (0-14 pH)</div>
+                    <div class="wire">
+                        <div class="wire-color" style="background:#ff3333"></div>
+                        <span class="wire-label">VCC</span>
+                        <span class="wire-arrow">→</span>
+                        <span class="wire-target">3.3V</span>
+                    </div>
+                    <div class="wire">
+                        <div class="wire-color" style="background:#333"></div>
+                        <span class="wire-label">GND</span>
+                        <span class="wire-arrow">→</span>
+                        <span class="wire-target">GND</span>
+                    </div>
+                    <div class="wire">
+                        <div class="wire-color" style="background:#aa66ff"></div>
+                        <span class="wire-label">OUT</span>
+                        <span class="wire-arrow">→</span>
+                        <span class="wire-target">GPIO 3 (ADC)</span>
+                    </div>
+                </div>
+
+                <div class="sensor-card s-ds18">
+                    <h3>DS18B20 Water Temp</h3>
+                    <div class="desc">Waterproof temperature (OneWire)</div>
+                    <div class="wire">
+                        <div class="wire-color" style="background:#ff3333"></div>
+                        <span class="wire-label">VCC</span>
+                        <span class="wire-arrow">→</span>
+                        <span class="wire-target">3.3V</span>
+                    </div>
+                    <div class="wire">
+                        <div class="wire-color" style="background:#333"></div>
+                        <span class="wire-label">GND</span>
+                        <span class="wire-arrow">→</span>
+                        <span class="wire-target">GND</span>
+                    </div>
+                    <div class="wire">
+                        <div class="wire-color" style="background:#4488ff"></div>
+                        <span class="wire-label">DATA</span>
+                        <span class="wire-arrow">→</span>
+                        <span class="wire-target">GPIO 2 (+ 4.7kΩ pullup)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ESP32 Center -->
+            <div class="esp32">
+                <h2>ESP32-S3 WROOM</h2>
+                <div class="board-name">Freenove N8R8</div>
+                <div class="pin-list">
+                    <div class="pin-row p-cds">
+                        <span class="pin-num">GPIO 1</span>
+                        <span class="pin-label">CDS Light</span>
+                    </div>
+                    <div class="pin-row p-ds18">
+                        <span class="pin-num">GPIO 2</span>
+                        <span class="pin-label">DS18B20 Temp</span>
+                    </div>
+                    <div class="pin-row p-ph">
+                        <span class="pin-num">GPIO 3</span>
+                        <span class="pin-label">pH Sensor</span>
+                    </div>
+                    <div class="pin-row p-sht">
+                        <span class="pin-num">GPIO 47</span>
+                        <span class="pin-label">SHT31 SDA</span>
+                    </div>
+                    <div class="pin-row p-sht">
+                        <span class="pin-num">GPIO 48</span>
+                        <span class="pin-label">SHT31 SCL</span>
+                    </div>
+                    <div style="border-top:1px solid #335; margin:8px 0; padding-top:8px;">
+                        <div style="color:#00ddcc; font-size:0.8em; margin-bottom:6px;">OV2640 Camera (FPC)</div>
+                    </div>
+                    <div class="pin-row p-cam">
+                        <span class="pin-num">GPIO 15</span>
+                        <span class="pin-label">XCLK</span>
+                    </div>
+                    <div class="pin-row p-cam">
+                        <span class="pin-num">GPIO 4/5</span>
+                        <span class="pin-label">SIOD/SIOC</span>
+                    </div>
+                    <div class="pin-row p-cam">
+                        <span class="pin-num">GPIO 6/7</span>
+                        <span class="pin-label">VSYNC/HREF</span>
+                    </div>
+                    <div class="pin-row p-cam">
+                        <span class="pin-num">D0-D7</span>
+                        <span class="pin-label">8,9,10,11,12,13,16,17,18</span>
+                    </div>
+                    <div style="border-top:1px solid #335; margin:8px 0;"></div>
+                    <div class="pin-row p-pwr">
+                        <span class="pin-num">3.3V</span>
+                        <span class="pin-label">Power (all sensors)</span>
+                    </div>
+                    <div class="pin-row p-pwr">
+                        <span class="pin-num">GND</span>
+                        <span class="pin-label">Ground (all sensors)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sensors Right -->
+            <div class="sensors">
+                <div class="sensor-card s-sht">
+                    <h3>SHT31 Air Temp + Humidity</h3>
+                    <div class="desc">I2C air temperature & humidity</div>
+                    <div class="wire">
+                        <div class="wire-color" style="background:#ff3333"></div>
+                        <span class="wire-label">VIN</span>
+                        <span class="wire-arrow">→</span>
+                        <span class="wire-target">3.3V</span>
+                    </div>
+                    <div class="wire">
+                        <div class="wire-color" style="background:#333"></div>
+                        <span class="wire-label">GND</span>
+                        <span class="wire-arrow">→</span>
+                        <span class="wire-target">GND</span>
+                    </div>
+                    <div class="wire">
+                        <div class="wire-color" style="background:#ff6688"></div>
+                        <span class="wire-label">SDA</span>
+                        <span class="wire-arrow">→</span>
+                        <span class="wire-target">GPIO 47</span>
+                    </div>
+                    <div class="wire">
+                        <div class="wire-color" style="background:#ff99aa"></div>
+                        <span class="wire-label">SCL</span>
+                        <span class="wire-arrow">→</span>
+                        <span class="wire-target">GPIO 48</span>
+                    </div>
+                </div>
+
+                <div class="sensor-card s-cam">
+                    <h3>OV2640 Camera</h3>
+                    <div class="desc">MJPEG streaming (FPC ribbon cable)</div>
+                    <div class="wire">
+                        <div class="wire-color" style="background:#00ddcc"></div>
+                        <span class="wire-label" style="min-width:auto">FPC 리본 케이블로 보드 커넥터에 직접 연결</span>
+                    </div>
+                    <div style="margin-top:10px; padding:10px; background:rgba(0,221,204,0.1); border-radius:8px; font-size:0.82em; color:#aaa;">
+                        별도 배선 불필요<br>
+                        보드 뒷면 FPC 커넥터에 꽂기만 하면 됨
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Pipeline -->
+        <div class="pipeline">
+            <h2>Data Pipeline</h2>
+            <div class="pipe-flow">
+                <div class="pipe-node pipe-esp">
+                    ESP32-S3
+                    <span class="pipe-sub">센서 수집 + 카메라</span>
+                </div>
+                <span class="pipe-arrow">→</span>
+                <div class="pipe-node pipe-mqtt">
+                    Mosquitto
+                    <span class="pipe-sub">MQTT Broker (RPi)</span>
+                </div>
+                <span class="pipe-arrow">→</span>
+                <div class="pipe-node pipe-telegraf">
+                    Telegraf
+                    <span class="pipe-sub">MQTT → InfluxDB (RPi)</span>
+                </div>
+                <span class="pipe-arrow">→</span>
+                <div class="pipe-node pipe-influx">
+                    InfluxDB
+                    <span class="pipe-sub">Time-series DB (RPi)</span>
+                </div>
+                <span class="pipe-arrow">→</span>
+                <div class="pipe-node pipe-grafana">
+                    Grafana
+                    <span class="pipe-sub">Dashboard (RPi:3000)</span>
+                </div>
+            </div>
+            <div class="cam-flow">
+                <div class="pipe-node pipe-esp">
+                    ESP32 Camera
+                    <span class="pipe-sub">:81/stream</span>
+                </div>
+                <span class="pipe-arrow">→</span>
+                <div class="pipe-node" style="background:#161628; border:2px solid #888; color:#ccc;">
+                    Browser / Grafana
+                    <span class="pipe-sub">직접 접속 (MJPEG)</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notes -->
+        <div class="notes">
+            <h2>Notes</h2>
+            <ul>
+                <li>DS18B20의 DATA 핀에 <span class="highlight">4.7kΩ 풀업 저항</span> 필요 (DATA ↔ 3.3V 사이)</li>
+                <li>SHT31 I2C 주소: <span class="highlight">0x44</span> (기본값)</li>
+                <li>OV2640은 FPC 리본 케이블로 보드 뒷면에 직접 연결</li>
+                <li>카메라가 GPIO 4~18 대부분을 사용하므로 센서는 <span class="highlight">GPIO 1, 2, 3, 47, 48</span> 사용</li>
+                <li>모든 센서 전원: <span class="highlight">3.3V</span> (5V 아님 주의)</li>
+                <li>라즈베리파이 서비스: Mosquitto, Telegraf, InfluxDB, Grafana, Node-RED</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
