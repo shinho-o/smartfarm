@@ -24,8 +24,10 @@
 #define SERVO_PIN    14      // 서보모터
 
 // ===================== 서보 설정 =====================
-#define SERVO_ON_ANGLE   90  // LED 켜는 각도
-#define SERVO_OFF_ANGLE  0   // LED 끄는 각도
+#define SERVO_CENTER     90  // 가운데 (대기 위치)
+#define SERVO_ON_ANGLE   130 // ON 방향으로 밀기
+#define SERVO_OFF_ANGLE  50  // OFF 방향으로 밀기
+#define SERVO_PUSH_TIME  500 // 밀고 복귀하는 시간 (ms)
 
 // ===================== OV2640 카메라 핀 (Freenove ESP32-S3) =====================
 #define CAM_PIN_PWDN   -1
@@ -349,12 +351,16 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
     if (strcmp(topic, MQTT_CONTROL) == 0) {
         if (strstr(msg, "\"led\":\"on\"") || strstr(msg, "\"led\": \"on\"")) {
             ledServo.write(SERVO_ON_ANGLE);
+            delay(SERVO_PUSH_TIME);
+            ledServo.write(SERVO_CENTER);
             ledState = true;
-            Serial.println("LED ON (servo → 90°)");
+            Serial.println("LED ON (push → return)");
         } else if (strstr(msg, "\"led\":\"off\"") || strstr(msg, "\"led\": \"off\"")) {
             ledServo.write(SERVO_OFF_ANGLE);
+            delay(SERVO_PUSH_TIME);
+            ledServo.write(SERVO_CENTER);
             ledState = false;
-            Serial.println("LED OFF (servo → 0°)");
+            Serial.println("LED OFF (push → return)");
         }
     }
 }
@@ -382,7 +388,7 @@ void setup() {
     tempSensor.begin();
 
     ledServo.attach(SERVO_PIN);
-    ledServo.write(SERVO_OFF_ANGLE);
+    ledServo.write(SERVO_CENTER);
     Serial.println("서보모터 초기화 완료");
 
     Wire.begin(SHT31_SDA, SHT31_SCL);
