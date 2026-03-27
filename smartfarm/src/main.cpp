@@ -25,9 +25,9 @@
 
 // ===================== 서보 설정 =====================
 // 현재(180°)=켜진 상태/대기, 시계방향 15도(195→clamp 180, 사실상 반대=165)
-#define SERVO_CENTER     160  // 대기 위치 (켜진 상태)
-#define SERVO_ON_ANGLE   160  // ON (현재 위치 유지)
-#define SERVO_OFF_ANGLE  180  // OFF (시계 방향 20도)
+#define SERVO_CENTER     150  // 대기 위치 (켜진 상태)
+#define SERVO_ON_ANGLE   150  // ON (현재 위치 유지)
+#define SERVO_OFF_ANGLE  180  // OFF (시계 방향 30도)
 #define SERVO_PUSH_TIME  1000  // 밀고 복귀하는 시간 (ms)
 
 // ===================== OV2640 카메라 핀 (Freenove ESP32-S3) =====================
