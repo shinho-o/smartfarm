@@ -28,7 +28,7 @@
 #define SERVO_CENTER     90   // 12시 (대기 위치)
 #define SERVO_ON_ANGLE   180  // 최대 (ON 방향)
 #define SERVO_OFF_ANGLE  0    // 최소 (OFF 방향)
-#define SERVO_PUSH_TIME  500  // 밀고 복귀하는 시간 (ms)
+#define SERVO_PUSH_TIME  1000  // 밀고 복귀하는 시간 (ms)
 
 // ===================== OV2640 카메라 핀 (Freenove ESP32-S3) =====================
 #define CAM_PIN_PWDN   -1
