@@ -24,10 +24,11 @@
 #define SERVO_PIN    14      // 서보모터
 
 // ===================== 서보 설정 =====================
-#define SERVO_CENTER     90  // 가운데 (대기 위치)
-#define SERVO_ON_ANGLE   130 // ON 방향으로 밀기
-#define SERVO_OFF_ANGLE  50  // OFF 방향으로 밀기
-#define SERVO_PUSH_TIME  500 // 밀고 복귀하는 시간 (ms)
+// 12시(90°)=대기, 3시(180°)=ON, 9시(0°)=OFF
+#define SERVO_CENTER     90   // 12시 (대기 위치)
+#define SERVO_ON_ANGLE   180  // 3시 (ON 방향)
+#define SERVO_OFF_ANGLE  0    // 9시 (OFF 방향)
+#define SERVO_PUSH_TIME  500  // 밀고 복귀하는 시간 (ms)
 
 // ===================== OV2640 카메라 핀 (Freenove ESP32-S3) =====================
 #define CAM_PIN_PWDN   -1
